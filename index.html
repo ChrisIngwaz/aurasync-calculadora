@@ -1,0 +1,1143 @@
+
+html_code = '''<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora AuraSync - Análisis de Pérdidas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light: #f8fafc;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--white);
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .calculator-wrapper {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            display: flex;
+            background: var(--light);
+            padding: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .progress-step {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            font-weight: 600;
+        }
+
+        .progress-step:hover {
+            transform: translateY(-2px);
+        }
+
+        .progress-step.active {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .progress-step.completed {
+            background: var(--success);
+            color: var(--white);
+        }
+
+        .form-section {
+            display: none;
+            padding: 40px;
+            animation: fadeIn 0.5s;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        .section-subtitle {
+            color: var(--gray);
+            margin-bottom: 30px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: var(--gray);
+            font-weight: normal;
+            margin-top: 4px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        select {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input[type="number"]:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .checkbox-item:hover {
+            border-color: var(--primary);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+        }
+
+        .checkbox-item.checked {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: var(--white);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .results-section {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 40px;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .summary-card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            border-left: 5px solid var(--danger);
+            transition: transform 0.3s;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .summary-card.positive {
+            border-left-color: var(--success);
+        }
+
+        .summary-card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .summary-card.primary {
+            border-left-color: var(--primary);
+        }
+
+        .card-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .card-value.negative {
+            color: var(--danger);
+        }
+
+        .card-value.positive {
+            color: var(--success);
+        }
+
+        .chart-container {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--dark);
+        }
+
+        .scenarios-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+
+        .scenarios-table th,
+        .scenarios-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .scenarios-table th {
+            background: var(--primary);
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        .scenarios-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .scenarios-table td:last-child {
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .recommendation-box {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .recommendation-box h3 {
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon input {
+            padding-left: 40px;
+        }
+
+        .input-icon::before {
+            content: "$";
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            .form-section {
+                padding: 20px;
+            }
+            
+            .progress-step {
+                min-width: 100%;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔮 AuraSync</h1>
+            <p>Calculadora de Pérdidas y Análisis de ROI</p>
+        </header>
+
+        <div class="calculator-wrapper">
+            <div class="progress-bar">
+                <div class="progress-step active" data-step="1">
+                    <div>📊</div>
+                    <div>Datos Básicos</div>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div>👻</div>
+                    <div>No-Shows</div>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div>📞</div>
+                    <div>Llamadas</div>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div>❌</div>
+                    <div>Errores</div>
+                </div>
+                <div class="progress-step" data-step="5">
+                    <div>📈</div>
+                    <div>Resultados</div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 1: DATOS BÁSICOS -->
+            <div class="form-section active" id="section-1">
+                <h2>Datos Básicos del Local</h2>
+                <p class="section-subtitle">Información fundamental para calcular su volumen de operación</p>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nombre del Local</label>
+                        <input type="text" id="nombreLocal" placeholder="Ej: Spa BellaVista">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Citas por día laboral <span class="hint">Promedio de atenciones diarias</span></label>
+                        <input type="number" id="citasDia" min="1" value="15">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Días abiertos por semana</label>
+                        <input type="number" id="diasSemana" min="1" max="7" value="6">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Ticket promedio por cita (USD)</label>
+                        <div class="input-icon">
+                            <input type="number" id="ticketPromedio" min="1" value="35">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Cantidad de especialistas</label>
+                        <input type="number" id="numEspecialistas" min="1" value="3">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>¿Tiene recepcionista dedicado?</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="tieneRecepcionista" onchange="toggleRecepcionista()">
+                                <span>Sí, tengo recepcionista</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group hidden" id="costoRecepcionistaGroup">
+                        <label>Costo mensual del recepcionista (USD)</label>
+                        <div class="input-icon">
+                            <input type="number" id="costoRecepcionista" value="500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="navigation">
+                    <div></div>
+                    <button class="btn btn-primary" onclick="nextSection(2)">
+                        Siguiente: No-Shows →
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: NO-SHOWS -->
+            <div class="form-section" id="section-2">
+                <h2>No-Shows (Clientes que no llegan)</h2>
+                <p class="section-subtitle">Citas agendadas donde el cliente simplemente no aparece</p>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>¿De cada 10 citas, cuántas no llegan? <span class="hint">Industria: 15-40%</span></label>
+                        <input type="number" id="noShowRate" min="0" max="10" value="3" onchange="updateNoShowPercentage()">
+                        <div class="hint">Equivalente al <strong id="noShowPercent">30%</strong> de sus citas</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>¿Confirma citas manualmente?</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="confirmaManual" checked>
+                                <span>Sí, llamo/WhatsApp a cada cliente</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" id="tiempoConfirmacionGroup">
+                        <label>Horas semanales dedicadas a confirmar <span class="hint">Aproximado</span></label>
+                        <input type="number" id="tiempoConfirmacion" min="0" value="5">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Valor hora de su tiempo (USD) <span class="hint">Si usted confirma las citas</span></label>
+                        <div class="input-icon">
+                            <input type="number" id="valorHoraDueno" value="15">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="navigation">
+                    <button class="btn btn-secondary" onclick="prevSection(1)">← Anterior</button>
+                    <button class="btn btn-primary" onclick="nextSection(3)">Siguiente: Llamadas →</button>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: LLAMADAS -->
+            <div class="form-section" id="section-3">
+                <h2>Llamadas No Atendidas</h2>
+                <p class="section-subtitle">Oportunidades perdidas por no estar disponible 24/7</p>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Horario de atención telefónica <span class="hint">Ej: 9:00 - 18:00</span></label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <input type="time" id="horaApertura" value="09:00">
+                            <input type="time" id="horaCierre" value="18:00">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Llamadas fuera de horario (por semana) <span class="hint">Noches, fines de semana</span></label>
+                        <input type="number" id="llamadasFueraHorario" min="0" value="8">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Llamadas perdidas estando ocupado (por semana)</label>
+                        <input type="number" id="llamadasOcupado" min="0" value="5">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Llamadas que no retorna (por semana)</label>
+                        <input type="number" id="llamadasNoRetorna" min="0" value="3">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tasa de conversión llamada → cita <span class="hint">Industria: 30-50%</span></label>
+                        <input type="number" id="tasaConversion" min="0" max="100" value="40">
+                    </div>
+                </div>
+
+                <div class="navigation">
+                    <button class="btn btn-secondary" onclick="prevSection(2)">← Anterior</button>
+                    <button class="btn btn-primary" onclick="nextSection(4)">Siguiente: Errores →</button>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: ERRORES -->
+            <div class="form-section" id="section-4">
+                <h2>Errores de Agenda</h2>
+                <p class="section-subtitle">Doble booking, horarios mal anotados, confusiones</p>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>¿Ha tenido doble booking este mes?</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item" onclick="toggleCheckbox('tieneDobleBooking')">
+                                <input type="checkbox" id="tieneDobleBooking">
+                                <span>Sí, 2 clientes mismo horario</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group hidden" id="frecuenciaDobleBooking">
+                        <label>¿Cuántas veces al mes?</label>
+                        <input type="number" id="vecesDobleBooking" min="1" value="2">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>¿Ha tenido errores de horario (mal anotado)?</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item" onclick="toggleCheckbox('tieneErroresHorario')">
+                                <input type="checkbox" id="tieneErroresHorario">
+                                <span>Sí, cliente llega y no está en agenda</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group hidden" id="frecuenciaErroresHorario">
+                        <label>¿Cuántas veces al mes?</label>
+                        <input type="number" id="vecesErroresHorario" min="1" value="2">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Costo promedio por error (USD) <span class="hint">Descuento + tiempo + reputación</span></label>
+                        <div class="input-icon">
+                            <input type="number" id="costoError" value="25">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Horas ociosas/semana por especialista <span class="hint">Esperando clientes que no llegan</span></label>
+                        <input type="number" id="horasOciosas" min="0" value="3">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Valor hora especialista (USD)</label>
+                        <div class="input-icon">
+                            <input type="number" id="valorHoraEspecialista" value="8">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="navigation">
+                    <button class="btn btn-secondary" onclick="prevSection(3)">← Anterior</button>
+                    <button class="btn btn-success" onclick="calculateResults()">
+                        📊 Ver Mi Análisis Completo
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 5: RESULTADOS -->
+            <div class="form-section results-section" id="section-5">
+                <h2>📈 Resultados de su Análisis</h2>
+                <p class="section-subtitle">Basado en los datos ingresados: <strong id="nombreLocalResult"></strong></p>
+                
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="card-label">Pérdida Mensual Total</div>
+                        <div class="card-value negative" id="perdidaTotal">$0</div>
+                        <div class="hint">Dinero que deja de ganar hoy</div>
+                    </div>
+                    
+                    <div class="summary-card positive">
+                        <div class="card-label">Inversión AuraSync</div>
+                        <div class="card-value">$279<span style="font-size:1rem">/mes</span></div>
+                        <div class="hint">Setup único: $1,900</div>
+                    </div>
+                    
+                    <div class="summary-card primary">
+                        <div class="card-label">Recuperación Estimada</div>
+                        <div class="card-value positive" id="recuperacionMensual">$0</div>
+                        <div class="hint">Escenario realista (60% recuperación)</div>
+                    </div>
+                    
+                    <div class="summary-card positive">
+                        <div class="card-label">Ganancia Neta Mensual</div>
+                        <div class="card-value positive" id="gananciaNeta">$0</div>
+                        <div class="hint">Después de pagar AuraSync</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Desglose de Pérdidas Mensuales</div>
+                    <canvas id="perdidasChart" height="100"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Proyección de Escenarios con AuraSync</div>
+                    <table class="scenarios-table">
+                        <thead>
+                            <tr>
+                                <th>Escenario</th>
+                                <th>Recuperación No-Shows</th>
+                                <th>Nuevas Citas Captadas</th>
+                                <th>Ahorro Errores</th>
+                                <th>Total Recuperado</th>
+                                <th>Menos Inversión</th>
+                                <th>Su Ganancia Neta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scenariosBody">
+                            <!-- Se llena con JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Proyección 12 Meses</div>
+                    <canvas id="proyeccionChart" height="100"></canvas>
+                </div>
+
+                <div class="recommendation-box">
+                    <h3>🎯 Nuestra Recomendación</h3>
+                    <p id="recomendacionTexto">Calculando...</p>
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.2); border-radius: 10px;">
+                        <strong>Payback:</strong> Recupera su inversión del setup en <span id="paybackMeses">0</span> meses
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="generatePDF()">
+                        📄 Descargar Análisis en PDF
+                    </button>
+                    <button class="btn btn-primary" onclick="window.print()">
+                        🖨️ Imprimir / Guardar como PDF
+                    </button>
+                    <button class="btn btn-secondary" onclick="location.reload()">
+                        🔄 Nuevo Cálculo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer style="text-align: center; color: white; padding: 20px; opacity: 0.8;">
+            <p>© 2024 AuraSync - Automatización con alma humana</p>
+            <p>contacto@aurasync.ec | WhatsApp: [Tu número]</p>
+        </footer>
+    </div>
+
+    <script>
+        // Variables globales para los gráficos
+        let chartPerdidas = null;
+        let chartProyeccion = null;
+
+        // Navegación entre secciones
+        function nextSection(n) {
+            document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.progress-step').forEach(s => s.classList.remove('active'));
+            
+            document.getElementById('section-' + n).classList.add('active');
+            document.querySelector('.progress-step[data-step="' + n + '"]').classList.add('active');
+            
+            // Marcar pasos anteriores como completados
+            for(let i = 1; i < n; i++) {
+                document.querySelector('.progress-step[data-step="' + i + '"]').classList.add('completed');
+            }
+            
+            window.scrollTo(0, 0);
+        }
+
+        function prevSection(n) {
+            document.querySelectorAll('.progress-step').forEach(s => s.classList.remove('completed'));
+            nextSection(n);
+        }
+
+        // Click en progress bar
+        document.querySelectorAll('.progress-step').forEach(step => {
+            step.addEventListener('click', function() {
+                const stepNum = parseInt(this.getAttribute('data-step'));
+                if (stepNum <= 4 || document.getElementById('section-5').classList.contains('active')) {
+                    nextSection(stepNum);
+                }
+            });
+        });
+
+        // Toggle recepcionista
+        function toggleRecepcionista() {
+            const checkbox = document.getElementById('tieneRecepcionista');
+            const group = document.getElementById('costoRecepcionistaGroup');
+            group.classList.toggle('hidden', !checkbox.checked);
+        }
+
+        // Toggle checkboxes visuales
+        function toggleCheckbox(id) {
+            const checkbox = document.getElementById(id);
+            checkbox.checked = !checkbox.checked;
+            checkbox.parentElement.classList.toggle('checked', checkbox.checked);
+            
+            // Mostrar/ocultar campos relacionados
+            if (id === 'tieneDobleBooking') {
+                document.getElementById('frecuenciaDobleBooking').classList.toggle('hidden', !checkbox.checked);
+            }
+            if (id === 'tieneErroresHorario') {
+                document.getElementById('frecuenciaErroresHorario').classList.toggle('hidden', !checkbox.checked);
+            }
+        }
+
+        // Update no-show percentage display
+        function updateNoShowPercentage() {
+            const val = document.getElementById('noShowRate').value;
+            document.getElementById('noShowPercent').textContent = (val * 10) + '%';
+        }
+
+        // Cálculos principales
+        function calculateResults() {
+            // Recoger datos
+            const datos = {
+                nombreLocal: document.getElementById('nombreLocal').value || 'Su Local',
+                citasDia: parseFloat(document.getElementById('citasDia').value) || 0,
+                diasSemana: parseFloat(document.getElementById('diasSemana').value) || 0,
+                ticketPromedio: parseFloat(document.getElementById('ticketPromedio').value) || 0,
+                numEspecialistas: parseFloat(document.getElementById('numEspecialistas').value) || 0,
+                tieneRecepcionista: document.getElementById('tieneRecepcionista').checked,
+                costoRecepcionista: parseFloat(document.getElementById('costoRecepcionista').value) || 0,
+                
+                noShowRate: (parseFloat(document.getElementById('noShowRate').value) || 0) * 10,
+                tiempoConfirmacion: parseFloat(document.getElementById('tiempoConfirmacion').value) || 0,
+                valorHoraDueno: parseFloat(document.getElementById('valorHoraDueno').value) || 0,
+                
+                llamadasFueraHorario: parseFloat(document.getElementById('llamadasFueraHorario').value) || 0,
+                llamadasOcupado: parseFloat(document.getElementById('llamadasOcupado').value) || 0,
+                llamadasNoRetorna: parseFloat(document.getElementById('llamadasNoRetorna').value) || 0,
+                tasaConversion: parseFloat(document.getElementById('tasaConversion').value) || 0,
+                
+                vecesDobleBooking: document.getElementById('tieneDobleBooking').checked ? 
+                    (parseFloat(document.getElementById('vecesDobleBooking').value) || 0) : 0,
+                vecesErroresHorario: document.getElementById('tieneErroresHorario').checked ? 
+                    (parseFloat(document.getElementById('vecesErroresHorario').value) || 0) : 0,
+                costoError: parseFloat(document.getElementById('costoError').value) || 0,
+                horasOciosas: parseFloat(document.getElementById('horasOciosas').value) || 0,
+                valorHoraEspecialista: parseFloat(document.getElementById('valorHoraEspecialista').value) || 0
+            };
+
+            // Cálculos base
+            const citasSemana = datos.citasDia * datos.diasSemana;
+            const citasMes = citasSemana * 4.3;
+            const ingresoPotencialMes = citasMes * datos.ticketPromedio;
+
+            // 1. Pérdida por no-shows
+            const citasNoShowMes = citasMes * (datos.noShowRate / 100);
+            const perdidaNoShow = citasNoShowMes * datos.ticketPromedio;
+            const costoTiempoConfirmacion = datos.tiempoConfirmacion * 4.3 * datos.valorHoraDueno;
+            const totalPerdidaNoShow = perdidaNoShow + costoTiempoConfirmacion;
+
+            // 2. Pérdida por llamadas no atendidas
+            const totalLlamadasPerdidasSemana = datos.llamadasFueraHorario + datos.llamadasOcupado + datos.llamadasNoRetorna;
+            const llamadasPerdidasMes = totalLlamadasPerdidasSemana * 4.3;
+            const citasPerdidasLlamadas = llamadasPerdidasMes * (datos.tasaConversion / 100);
+            const perdidaLlamadas = citasPerdidasLlamadas * datos.ticketPromedio;
+
+            // 3. Pérdida por errores
+            const totalErroresMes = datos.vecesDobleBooking + datos.vecesErroresHorario;
+            const perdidaErroresDirecta = totalErroresMes * datos.costoError;
+            const costoHorasOciosas = datos.horasOciosas * 4.3 * datos.numEspecialistas * datos.valorHoraEspecialista;
+            const totalPerdidaErrores = perdidaErroresDirecta + costoHorasOciosas;
+
+            // Total
+            const perdidaTotalMensual = totalPerdidaNoShow + perdidaLlamadas + totalPerdidaErrores;
+            const perdidaAnual = perdidaTotalMensual * 12;
+
+            // Escenarios de recuperación
+            const escenarios = {
+                conservador: {
+                    recuperacionNoShow: 0.4,
+                    recuperacionLlamadas: 0.3,
+                    reduccionErrores: 0.5,
+                    nombre: 'Conservador'
+                },
+                realista: {
+                    recuperacionNoShow: 0.6,
+                    recuperacionLlamadas: 0.5,
+                    reduccionErrores: 0.8,
+                    nombre: 'Realista (más probable)'
+                },
+                optimista: {
+                    recuperacionNoShow: 0.75,
+                    recuperacionLlamadas: 0.7,
+                    reduccionErrores: 0.95,
+                    nombre: 'Optimista'
+                }
+            };
+
+            const resultados = {};
+            Object.keys(escenarios).forEach(key => {
+                const esc = escenarios[key];
+                const recNoShow = totalPerdidaNoShow * esc.recuperacionNoShow;
+                const recLlamadas = perdidaLlamadas * esc.recuperacionLlamadas;
+                const recErrores = totalPerdidaErrores * esc.reduccionErrores;
+                const totalRecuperado = recNoShow + recLlamadas + recErrores;
+                
+                resultados[key] = {
+                    nombre: esc.nombre,
+                    recNoShow: recNoShow,
+                    recLlamadas: recLlamadas,
+                    recErrores: recErrores,
+                    totalRecuperado: totalRecuperado,
+                    gananciaNeta: totalRecuperado - 279,
+                    roi: ((totalRecuperado - 279) / 279 * 100).toFixed(0)
+                };
+            });
+
+            // Mostrar resultados
+            document.getElementById('nombreLocalResult').textContent = datos.nombreLocal;
+            document.getElementById('perdidaTotal').textContent = '$' + perdidaTotalMensual.toLocaleString('es-EC', {maximumFractionDigits: 0});
+            document.getElementById('recuperacionMensual').textContent = '$' + resultados.realista.totalRecuperado.toLocaleString('es-EC', {maximumFractionDigits: 0});
+            document.getElementById('gananciaNeta').textContent = '$' + resultados.realista.gananciaNeta.toLocaleString('es-EC', {maximumFractionDigits: 0});
+
+            // Payback
+            const payback = 1900 / resultados.realista.gananciaNeta;
+            document.getElementById('paybackMeses').textContent = payback <= 1 ? 'menos de 1' : payback.toFixed(1);
+
+            // Recomendación
+            let recomendacion = '';
+            if (perdidaTotalMensual > 3000) {
+                recomendacion = `<strong>Implementación URGENTE recomendada.</strong> Su local está perdiendo $${perdidaTotalMensual.toLocaleString()} mensuales. Con AuraSync podría recuperar $${resultados.realista.totalRecuperado.toLocaleString()} desde el primer mes, logrando un ROI del ${resultados.realista.roi}%.`;
+            } else if (perdidaTotalMensual > 1500) {
+                recomendacion = `<strong>Implementación recomendada.</strong> Está perdiendo $${perdidaTotalMensual.toLocaleString()} mensuales. AuraSync le generaría $${resultados.realista.gananciaNeta.toLocaleString()} de ganancia neta mensual.`;
+            } else {
+                recomendacion = `<strong>Evaluación recomendada.</strong> Aunque sus pérdidas son menores ($${perdidaTotalMensual.toLocaleString()}), AuraSync le permitirá escalar sin aumentar costos fijos y mejorar la experiencia del cliente.`;
+            }
+            document.getElementById('recomendacionTexto').innerHTML = recomendacion;
+
+            // Llenar tabla de escenarios
+            const tbody = document.getElementById('scenariosBody');
+            tbody.innerHTML = '';
+            Object.keys(resultados).forEach(key => {
+                const r = resultados[key];
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${r.nombre}</strong></td>
+                        <td>$${r.recNoShow.toLocaleString('es-EC', {maximumFractionDigits: 0})}</td>
+                        <td>$${r.recLlamadas.toLocaleString('es-EC', {maximumFractionDigits: 0})}</td>
+                        <td>$${r.recErrores.toLocaleString('es-EC', {maximumFractionDigits: 0})}</td>
+                        <td><strong>$${r.totalRecuperado.toLocaleString('es-EC', {maximumFractionDigits: 0})}</strong></td>
+                        <td>-$279</td>
+                        <td style="color: var(--success); font-size: 1.1rem;">$${r.gananciaNeta.toLocaleString('es-EC', {maximumFractionDigits: 0})}</td>
+                    </tr>
+                `;
+            });
+
+            // Crear gráficos
+            createCharts(totalPerdidaNoShow, perdidaLlamadas, totalPerdidaErrores, resultados.realista.gananciaNeta);
+
+            // Ir a resultados
+            nextSection(5);
+        }
+
+        function createCharts(perdidaNoShow, perdidaLlamadas, perdidaErrores, gananciaNeta) {
+            // Gráfico de pérdidas
+            const ctx1 = document.getElementById('perdidasChart').getContext('2d');
+            if (chartPerdidas) chartPerdidas.destroy();
+            
+            chartPerdidas = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['No-Shows', 'Llamadas perdidas', 'Errores de agenda'],
+                    datasets: [{
+                        data: [perdidaNoShow, perdidaLlamadas, perdidaErrores],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#6366f1'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de proyección
+            const ctx2 = document.getElementById('proyeccionChart').getContext('2d');
+            if (chartProyeccion) chartProyeccion.destroy();
+
+            const meses = ['Mes 1', 'Mes 2', 'Mes 3', 'Mes 6', 'Mes 12'];
+            const acumuladoInversion = [2179, 2458, 2737, 3574, 5248];
+            const acumuladoGanancia = [
+                gananciaNeta,
+                gananciaNeta * 2,
+                gananciaNeta * 3,
+                gananciaNeta * 6,
+                gananciaNeta * 12
+            ];
+
+            chartProyeccion = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: meses,
+                    datasets: [{
+                        label: 'Inversión Acumulada',
+                        data: acumuladoInversion,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Ganancia Acumulada',
+                        data: acumuladoGanancia,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generar PDF
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Título
+            doc.setFontSize(20);
+            doc.text('Análisis AuraSync - ' + document.getElementById('nombreLocalResult').textContent, 20, 30);
+            
+            doc.setFontSize(12);
+            doc.text('Fecha: ' + new Date().toLocaleDateString('es-EC'), 20, 45);
+            
+            // Resumen
+            doc.setFontSize(14);
+            doc.text('Resumen Ejecutivo', 20, 65);
+            
+            doc.setFontSize(11);
+            const perdidaTotal = document.getElementById('perdidaTotal').textContent;
+            const gananciaNeta = document.getElementById('gananciaNeta').textContent;
+            
+            doc.text('Pérdida mensual actual: ' + perdidaTotal, 20, 80);
+            doc.text('Inversión AuraSync: $279/mes (Setup: $1,900)', 20, 90);
+            doc.text('Ganancia neta proyectada: ' + gananciaNeta + '/mes', 20, 100);
+            
+            // Escenarios
+            doc.setFontSize(14);
+            doc.text('Escenarios de Recuperación', 20, 120);
+            
+            doc.setFontSize(10);
+            let y = 135;
+            document.querySelectorAll('#scenariosBody tr').forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const texto = cells[0].textContent + ': ' + cells[6].textContent + ' mensuales de ganancia neta';
+                doc.text(texto, 20, y);
+                y += 10;
+            });
+            
+            // Footer
+            doc.setFontSize(10);
+            doc.text('Este análisis fue generado por la Calculadora AuraSync', 20, 280);
+            doc.text('Para más información: contacto@aurasync.ec', 20, 290);
+            
+            doc.save('Analisis-AuraSync.pdf');
+        }
+    </script>
+</body>
+</html>'''
+
+# Guardar el archivo
+with open('/mnt/kimi/output/aurasync_calculadora.html', 'w', encoding='utf-8') as f:
+    f.write(html_code)
+
+print("✅ Calculadora creada exitosamente")
+print("📁 Ubicación: /mnt/kimi/output/aurasync_calculadora.html")
+print("\n🚀 Instrucciones para subir a GitHub Pages:")
+print("1. Crea un repositorio en GitHub (ej: aurasync-calculadora)")
+print("2. Sube este archivo como index.html")
+print("3. Ve a Settings > Pages > Source: Deploy from a branch > main/root")
+print("4. Tu calculadora estará en: https://[usuario].github.io/aurasync-calculadora/")
