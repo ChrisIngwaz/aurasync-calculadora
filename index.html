@@ -601,7 +601,7 @@
                         <label>Horario de atención telefónica <span class="hint">Ej: 9:00 - 18:00</span></label>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <input type="time" id="horaApertura" value="09:00">
-                            <input type="time" id="horaCierre" value="18:00">
+                            <input type="time" id="horaCierre" value="19:00">
                         </div>
                     </div>
                     
@@ -781,7 +781,7 @@
 
         <footer style="text-align: center; color: white; padding: 20px; opacity: 0.8;">
             <p>© 2024 AuraSync - Automatización con alma humana</p>
-            <p>contacto@aurasync.ec | WhatsApp: [Tu número]</p>
+            <p>contacto@aurasync.ec | WhatsApp: +593995430859</p>
         </footer>
     </div>
 
@@ -942,8 +942,8 @@
                     recLlamadas: recLlamadas,
                     recErrores: recErrores,
                     totalRecuperado: totalRecuperado,
-                    gananciaNeta: totalRecuperado - 279,
-                    roi: ((totalRecuperado - 279) / 279 * 100).toFixed(0)
+                    gananciaNeta: totalRecuperado - 379,
+                    roi: ((totalRecuperado - 379) / 379 * 100).toFixed(0)
                 };
             });
 
@@ -964,7 +964,7 @@
             } else if (perdidaTotalMensual > 1500) {
                 recomendacion = `<strong>Implementación recomendada.</strong> Está perdiendo $${perdidaTotalMensual.toLocaleString()} mensuales. AuraSync le generaría $${resultados.realista.gananciaNeta.toLocaleString()} de ganancia neta mensual.`;
             } else {
-                recomendacion = `<strong>Evaluación recomendada.</strong> Aunque sus pérdidas son menores ($${perdidaTotalMensual.toLocaleString()}), AuraSync le permitirá escalar sin aumentar costos fijos y mejorar la experiencia del cliente.`;
+                recomendacion = `<strong>Eva3uación recomendada.</strong> Aunque sus pérdidas son menores ($${perdidaTotalMensual.toLocaleString()}), AuraSync le permitirá escalar sin aumentar costos fijos y mejorar la experiencia del cliente.`;
             }
             document.getElementById('recomendacionTexto').innerHTML = recomendacion;
 
@@ -980,7 +980,7 @@
                         <td>$${r.recLlamadas.toLocaleString('es-EC', {maximumFractionDigits: 0})}</td>
                         <td>$${r.recErrores.toLocaleString('es-EC', {maximumFractionDigits: 0})}</td>
                         <td><strong>$${r.totalRecuperado.toLocaleString('es-EC', {maximumFractionDigits: 0})}</strong></td>
-                        <td>-$279</td>
+                        <td>-$379</td>
                         <td style="color: var(--success); font-size: 1.1rem;">$${r.gananciaNeta.toLocaleString('es-EC', {maximumFractionDigits: 0})}</td>
                     </tr>
                 `;
@@ -1102,7 +1102,7 @@
             const gananciaNeta = document.getElementById('gananciaNeta').textContent;
             
             doc.text('Pérdida mensual actual: ' + perdidaTotal, 20, 80);
-            doc.text('Inversión AuraSync: $279/mes (Setup: $1,900)', 20, 90);
+            doc.text('Inversión AuraSync: $379/mes (Setup: $1,900)', 20, 90);
             doc.text('Ganancia neta proyectada: ' + gananciaNeta + '/mes', 20, 100);
             
             // Escenarios
