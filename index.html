@@ -139,7 +139,10 @@
 <body>
     <div class="container">
         <header>
-            <h1>🔮 AuraSync</h1>
+            <div style="margin-bottom:15px">
+                <img src="AuraSync-logo.jpg" alt="AuraSync" style="height:70px;width:auto;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3))">
+            </div>
+            <h1 style="margin-top:10px">AuraSync</h1>
             <p>La Calculadora que Revela lo Que Tu Local Está Perdiendo</p>
             <p style="font-size:1rem;opacity:0.85;max-width:600px;margin:0 auto">Cada cita perdida, cada llamada sin responder, cada error de agenda... es dinero que se va. Descubre cuánto en 3 minutos.</p>
         </header>
@@ -305,7 +308,15 @@
 
             <!-- SECCIÓN 5: RESULTADOS -->
             <div class="form-section" id="section-5" style="padding:0">
-                <div class="results-hero"><div class="overline">Análisis completo de <span id="nombreLocalResult">Tu Local</span></div><h2>💔 Estás perdiendo cada mes</h2><div class="big-number" id="perdidaTotalHero">$0</div><div class="caption">Dinero que se va de tu bolsillo por problemas que AuraSync resuelve automáticamente</div></div>
+                <div class="results-hero">
+                    <div style="margin-bottom:20px">
+                        <img src="AuraSync-logo.jpg" alt="AuraSync" style="height:55px;width:auto;opacity:0.95;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3))">
+                    </div>
+                    <div class="overline">Análisis completo de <span id="nombreLocalResult">Tu Local</span></div>
+                    <h2>💔 Estás perdiendo cada mes</h2>
+                    <div class="big-number" id="perdidaTotalHero">$0</div>
+                    <div class="caption">Dinero que se va de tu bolsillo por problemas que AuraSync resuelve automáticamente</div>
+                </div>
 
                 <div class="summary-cards">
                     <div class="summary-card danger"><div class="card-label">🔥 Pérdida Mensual Total</div><div class="card-value negative" id="perdidaTotal">$0</div><div class="card-hint">Dinero que deja de ganar HOY</div></div>
@@ -349,7 +360,14 @@
             </div>
         </div>
 
-        <footer><p><strong>© 2024 AuraSync</strong> — Automatización con alma humana</p><p>📧 <a href="mailto:contacto@aurasync.digital">contacto@aurasync.digital</a> | 📱 <a href="https://wa.me/593995430859">WhatsApp: +593 99 543 0859</a></p><p style="margin-top:10px;font-size:0.9rem">Este análisis es confidencial y personalizado para tu negocio</p></footer>
+        <footer>
+            <div style="margin-bottom:15px">
+                <img src="AuraSync-logo.jpg" alt="AuraSync" style="height:35px;width:auto;opacity:0.85">
+            </div>
+            <p><strong>© 2024 AuraSync</strong> — Automatización con alma humana</p>
+            <p>📧 <a href="mailto:contacto@aurasync.digital">contacto@aurasync.digital</a> | 📱 <a href="https://wa.me/593995430859">WhatsApp: +593 99 543 0859</a></p>
+            <p style="margin-top:10px;font-size:0.9rem">Este análisis es confidencial y personalizado para tu negocio</p>
+        </footer>
     </div>
 
 <script>
@@ -378,11 +396,28 @@ document.querySelectorAll('.progress-step').forEach(step=>{
 function validateSection(n){
     let valid=true;
     const section=document.getElementById('section-'+n);
-    const inputs=section.querySelectorAll('input[type="number"],input[type="text"]');
+    // Solo validar inputs numéricos visibles (ignorar texto y ocultos)
+    const inputs=section.querySelectorAll('input[type="number"]');
     inputs.forEach(input=>{
-        if(input.closest('.hidden'))return;
-        const val=parseFloat(input.value),min=parseFloat(input.min)||0,max=parseFloat(input.max)||Infinity;
-        if(input.value===''||isNaN(val)||val<min||val>max){input.classList.add('error');valid=false;}else{input.classList.remove('error');}
+        // Verificar si el input o algún ancestro está oculto
+        let parent=input.parentElement;
+        let isHidden=false;
+        while(parent&&parent!==section){
+            if(parent.classList&&parent.classList.contains('hidden')){isHidden=true;break;}
+            parent=parent.parentElement;
+        }
+        if(isHidden)return;
+
+        const val=parseFloat(input.value);
+        const min=parseFloat(input.min)||0;
+        const max=parseFloat(input.max)||Infinity;
+
+        if(input.value.trim()===''||isNaN(val)||val<min||val>max){
+            input.classList.add('error');
+            valid=false;
+        }else{
+            input.classList.remove('error');
+        }
     });
     return valid;
 }
